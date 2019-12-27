@@ -16,8 +16,19 @@ namespace Nuterra.Interop
 
         internal static Dictionary<string, InteropType> types = new Dictionary<string, InteropType>();
 
+        /// <summary>
+        /// Register a type for Interop
+        /// </summary>
+        /// <typeparam name="T">Type</typeparam>
+        /// <returns>Registration success</returns>
         public static bool RegisterInteropType<T>() => RegisterInteropType(typeof(T));
 
+
+        /// <summary>
+        /// Register a type for Interop
+        /// </summary>
+        /// <param name="type">Type</param>
+        /// <returns>Registration success</returns>
         public static bool RegisterInteropType(Type type)
         {
             var tn = type.FullName;
@@ -26,10 +37,25 @@ namespace Nuterra.Interop
             return true;
         }
 
+        /// <summary>
+        /// Get the InteropType for a given Type
+        /// </summary>
+        /// <typeparam name="T">Type</typeparam>
+        /// <returns></returns>
         public static InteropType GetInteropType<T>() => GetInteropType(typeof(T).FullName);
 
-        public static InteropType GetInteropType(Type t) => GetInteropType(t.FullName);
+        /// <summary>
+        /// Get the InteropType for a given Type
+        /// </summary>
+        /// <param name="type">Type</param>
+        /// <returns></returns>
+        public static InteropType GetInteropType(Type type) => GetInteropType(type.FullName);
 
+        /// <summary>
+        /// Get the InteropType for a given Type
+        /// </summary>
+        /// <param name="name">Type's fully qualified name</param>
+        /// <returns></returns>
         public static InteropType GetInteropType(string name)
         {
             if (types.ContainsKey(name))
@@ -73,15 +99,27 @@ namespace Nuterra.Interop
             }
         }
 
+        /// <summary>
+        /// Create an InteropObject instance of the underlying Type
+        /// </summary>
+        /// <param name="args">Constructor parameters</param>
+        /// <returns>New instance</returns>
         public InteropObject CreateInstance(params object[] args)
         {
             var obj = Activator.CreateInstance(Type, args);
             return new InteropObject(this, obj);
         }
 
+        /// <summary>
+        /// Try to invoke a static method
+        /// </summary>
+        /// <param name="function">Method name</param>
+        /// <param name="result">Method output</param>
+        /// <param name="parameters">Mathod parameters</param>
+        /// <returns>Invocation success</returns>
         public bool TryInvokeStatic(string function, out InteropObject result, params object[] parameters)
         {
-            var succeed = false;
+            var success = false;
             result = null;
             var method = Type.GetMethod(function, staticFlags);
             if (method != null)
@@ -90,7 +128,7 @@ namespace Nuterra.Interop
                 {
                     var res = method.Invoke(null, parameters);
                     if (res != null) result = new InteropObject(ForceGetInteropType(res.GetType()), res);
-                    succeed = true;
+                    success = true;
                 }
                 catch (Exception e)
                 {
@@ -98,33 +136,47 @@ namespace Nuterra.Interop
                     Console.WriteLine(e);
                 }
             }
-            return succeed;
+            return success;
         }
 
+        /// <summary>
+        /// Try to get a static member's value
+        /// </summary>
+        /// <param name="member">Member name</param>
+        /// <param name="result">Member value</param>
+        /// <param name="index">Index values for indexed properties</param>
+        /// <returns>Success</returns>
         public bool TryGetStatic(string member, out InteropObject result, params object[] index)
         {
             result = null;
-            var succeed = fields.TryGetValue(member, out FieldInfo f) && f.IsStatic;
-            if(succeed)
+            var success = fields.TryGetValue(member, out FieldInfo f) && f.IsStatic;
+            if(success)
             {
                 var res = f.GetValue(null);
                 result = new InteropObject(ForceGetInteropType(res.GetType()), res);
             } else {
-                succeed = properties.TryGetValue(member, out PropertyInfo p) && p.CanRead && p.GetMethod.IsStatic;
-                if(succeed)
+                success = properties.TryGetValue(member, out PropertyInfo p) && p.CanRead && p.GetMethod.IsStatic;
+                if(success)
                 {
                     var res = p.GetValue(null, index);
                     result = new InteropObject(ForceGetInteropType(res.GetType()), res);
                 }
             }
 
-            return succeed;
+            return success;
         }
 
+        /// <summary>
+        /// Try to set a static member's value
+        /// </summary>
+        /// <param name="member">Member name</param>
+        /// <param name="value">New value</param>
+        /// <param name="index">Index values for indexed properties</param>
+        /// <returns>Success</returns>
         public bool TrySetStatic(string member, object value, params object[] index)
         {
-            var succeed = fields.TryGetValue(member, out FieldInfo f) && f.IsStatic;
-            if (succeed)
+            var success = fields.TryGetValue(member, out FieldInfo f) && f.IsStatic;
+            if (success)
             {
                 try
                 {
@@ -138,8 +190,8 @@ namespace Nuterra.Interop
             }
             else
             {
-                succeed = properties.TryGetValue(member, out PropertyInfo p) && p.CanWrite && p.SetMethod.IsStatic;
-                if (succeed)
+                success = properties.TryGetValue(member, out PropertyInfo p) && p.CanWrite && p.SetMethod.IsStatic;
+                if (success)
                 {
                     try
                     {
@@ -153,7 +205,7 @@ namespace Nuterra.Interop
                 }
             }
 
-            return succeed;
+            return success;
         }
     }
 }

@@ -45,6 +45,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Example.cs" />
     <Compile Include="InteropMod.cs" />
     <Compile Include="InteropObject.cs" />
     <Compile Include="InteropType.cs" />

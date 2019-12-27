@@ -9,7 +9,6 @@ namespace Nuterra.Interop
 {
     public class InteropObject
     {
-
         private object value;
 
         public InteropType InteropType { get; private set; }
@@ -20,9 +19,16 @@ namespace Nuterra.Interop
             this.value = value;
         }
 
+        /// <summary>
+        /// Try to invoke an instance method
+        /// </summary>
+        /// <param name="function">Method name</param>
+        /// <param name="result">Method output</param>
+        /// <param name="parameters">Mathod parameters</param>
+        /// <returns>Invocation success</returns>
         public bool TryInvoke(string function, out InteropObject result, params object[] parameters)
         {
-            var succeed = false;
+            var success = false;
             result = null;
             var method = InteropType.Type.GetMethod(function, InteropType.instance);
             if (method != null)
@@ -31,7 +37,7 @@ namespace Nuterra.Interop
                 {
                     var res = method.Invoke(this.value, parameters);
                     if (res != null) result = new InteropObject(InteropType.ForceGetInteropType(res.GetType()), res);
-                    succeed = true;
+                    success = true;
                 }
                 catch (Exception e)
                 {
@@ -39,35 +45,49 @@ namespace Nuterra.Interop
                     Console.WriteLine(e);
                 }
             }
-            return succeed;
+            return success;
         }
 
+        /// <summary>
+        /// Try to get an instance member's value
+        /// </summary>
+        /// <param name="member">Member name</param>
+        /// <param name="result">Member value</param>
+        /// <param name="index">Index values for indexed properties</param>
+        /// <returns>Success</returns>
         public bool TryGet(string member, out InteropObject result, params object[] index)
         {
             result = null;
-            var succeed = InteropType.fields.TryGetValue(member, out FieldInfo f) && !f.IsStatic;
-            if (succeed)
+            var success = InteropType.fields.TryGetValue(member, out FieldInfo f) && !f.IsStatic;
+            if (success)
             {
                 var res = f.GetValue(this.value);
                 result = new InteropObject(InteropType.ForceGetInteropType(res.GetType()), res);
             }
             else
             {
-                succeed = InteropType.properties.TryGetValue(member, out PropertyInfo p) && p.CanRead && !p.GetMethod.IsStatic;
-                if (succeed)
+                success = InteropType.properties.TryGetValue(member, out PropertyInfo p) && p.CanRead && !p.GetMethod.IsStatic;
+                if (success)
                 {
                     var res = p.GetValue(this.value, index);
                     result = new InteropObject(InteropType.ForceGetInteropType(res.GetType()), res);
                 }
             }
 
-            return succeed;
+            return success;
         }
 
+        /// <summary>
+        /// Try to set an instance member's value
+        /// </summary>
+        /// <param name="member">Member name</param>
+        /// <param name="value">New value</param>
+        /// <param name="index">Index values for indexed properties</param>
+        /// <returns>Success</returns>
         public bool TrySet(string member, object value, params object[] index)
         {
-            var succeed = InteropType.fields.TryGetValue(member, out FieldInfo f) && !f.IsStatic;
-            if (succeed)
+            var success = InteropType.fields.TryGetValue(member, out FieldInfo f) && !f.IsStatic;
+            if (success)
             {
                 try
                 {
@@ -81,8 +101,8 @@ namespace Nuterra.Interop
             }
             else
             {
-                succeed = InteropType.properties.TryGetValue(member, out PropertyInfo p) && p.CanWrite && !p.SetMethod.IsStatic;
-                if (succeed)
+                success = InteropType.properties.TryGetValue(member, out PropertyInfo p) && p.CanWrite && !p.SetMethod.IsStatic;
+                if (success)
                 {
                     try
                     {
@@ -96,7 +116,7 @@ namespace Nuterra.Interop
                 }
             }
 
-            return succeed;
+            return success;
         }
 
         public T As<T>()
